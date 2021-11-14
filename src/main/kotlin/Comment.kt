@@ -8,4 +8,11 @@ data class Comment(
     var text: String, //Текст комментария
     val date: Int, // Дата создания заметки в формате Unixtime
     var deletionId: Boolean, //Идентификатор удаления заметки
-) { override fun toString(): String = "Пользователь: $userId. Написал комментарий к заметке: $commentId. Текст комментария: $text" }
+) {
+    override fun toString(): String {
+        if (deletionId) {
+            return "\n Пользователь: $userId. Написал комментарий к заметке: $commentId. Текст комментария: $text"
+        }
+        return "Комментарий удален"
+    }
+}

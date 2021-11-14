@@ -8,5 +8,11 @@ data class Note(
     val date: Int, // Дата создания заметки в формате Unixtime
     var deletionId: Boolean, //Идентификатор удаления заметки
 ) {
-    override fun toString(): String = "Пользователь: $ownerId. написал заметку: $title. Текст заметки: $text"
+    override fun toString(): String {
+        if(deletionId) {
+           return "\n Пользователь: $ownerId. написал заметку: $title. Текст заметки: $text"
+        }
+        return "Заметка удалена"
+    }
+
 }

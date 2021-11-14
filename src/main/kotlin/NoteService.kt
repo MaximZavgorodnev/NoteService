@@ -1,52 +1,65 @@
 
+
 object NoteService {
     var noteStorage: MutableList<GenericNote> = mutableListOf()
     var idCom = 0
-    var mutableIterator = noteStorage.listIterator()
 
     //Добавление заметки
     fun add(newNote: Note) {
         val gNote = GenericNote(note = newNote,  comment = mutableListOf())
         noteStorage.add(newNote.noteId,gNote)
+        println("Заметка добавлена")
     }
 
     //Добавляет новый комментарий к заметке
     fun createComment(newNote: Note,user: User) {
         val gNote = get(user) //Список всех заметок пользователя
-        val mutableIterator = gNote.listIterator()
-        while (mutableIterator.hasNext()) {
-            if (newNote.noteId == mutableIterator.next().note.noteId ) {
+        gNote.forEachIndexed { index, note ->
+            if (newNote.noteId == gNote[index].note.noteId ) {
                 val userComment = Comment(commentId = idCom, //Идентификатор комментария
-                    noteId = mutableIterator.next().note.noteId, //Идентификатор заметки
+                    noteId = gNote[index].note.noteId, //Идентификатор заметки
                     userId = user.userId, //Идентификатор пользователя написавший комментарий
                     ownerId = user.userId, //Идентификатор владельца заметки
                     text = "$idCom Текст комментария", //Текст комментария
                     date = 1000, // Дата создания заметки в формате Unixtime
                     deletionId = true, //Идентификатор удаления заметки
                 )
-                mutableIterator.next().comment.add(userComment)
+                gNote[index].comment.add(userComment)
                 idCom++
+                println("Комментарий добавлен")
+                return
             }
-            throw NoteNotFoundException("Такой заметки не существует")
         }
+        throw NoteNotFoundException("Такой заметки не существует")
+    }
 
+    //Возвращает список заметок, созданных пользователем.
+    fun get(user: User): MutableList<GenericNote> {
+        var notes: MutableList<GenericNote> = mutableListOf()
+        noteStorage.forEachIndexed { index, note ->
+            if (user.userId == noteStorage[index].note.ownerId) {
+                notes.add(noteStorage[index])
+            }
+        }
+        if (notes==null) {throw NoteNotFoundException("Пользователь не создавал заметок")} else {return notes}
     }
 
     //Удаляет заметку текущего пользователя
     fun delete(user: User) {
-        while (mutableIterator.hasNext()) {
-            if (user.userId == mutableIterator.next().note.ownerId){
-                mutableIterator.remove()
+        noteStorage.forEachIndexed { index, note ->
+            if (user.userId == noteStorage[index].note.ownerId) {
+                noteStorage[index].note.deletionId = false
             }
         }
+        println(get(user))
     }
 
     //Удаляет комментарий к заметке
-    fun deleteComment(gNote: GenericNote, idComment: Int){
-        val mutableIterator = gNote.comment.listIterator()
-        while (mutableIterator.hasNext()) {
-            if (idComment == mutableIterator.next().commentId){
-                mutableIterator.next().deletionId = false
+    fun deleteComment(noteId: Int, idComment: Int){
+        noteStorage[noteId].comment.forEachIndexed { index, note ->
+            if (idComment == noteStorage[noteId].comment[index].commentId){
+                noteStorage[noteId].comment[index].deletionId = false
+                return
             }
         }
         throw NoteNotFoundException("Такого комментария нет или он был удален")
@@ -55,40 +68,30 @@ object NoteService {
     //Редактирует заметку текущего пользователя
     fun edit(user: User){
         var notes = get(user)
-        val mutableIterator = notes.listIterator()
-        while (mutableIterator.hasNext()) {
-            mutableIterator.next().note.title = "Изменили заголовок"
+        notes.forEachIndexed { index, note ->
+            notes[index].note.title = "Изменили заголовок"
         }
+
     }
 
     //Редактирует указанный комментарий у заметки.
     fun editComment(noteId: Int ,idComment: Int){
-        val mutableIterator = noteStorage[noteId].comment.listIterator()
-        while (mutableIterator.hasNext()) {
-            if ((idComment == mutableIterator.next().commentId)&&(mutableIterator.next().deletionId != false)){
-                mutableIterator.next().text = "Текст комментария отредактирован"
+        noteStorage[noteId].comment.forEachIndexed { index, note ->
+            if ((idComment == noteStorage[noteId].comment[index].commentId)&&(noteStorage[noteId].comment[index].deletionId != false)){
+                noteStorage[noteId].comment[index].text = "Текст комментария отредактирован"
+                return
             }
         }
         throw NoteNotFoundException("Такого комментария нет или он был удален")
     }
 
-    //Возвращает список заметок, созданных пользователем.
-    fun get(user: User): MutableList<GenericNote> {
-        var notes: MutableList<GenericNote> = mutableListOf()
-        while (mutableIterator.hasNext()) {
-            if (user.userId == mutableIterator.next().note.ownerId){
-                notes.add(mutableIterator.next())
-                return notes
-            }
-        }
-        throw NoteNotFoundException("Пользователь не создавал заметок")
-    }
+
 
     //Возвращает заметку по её id.
     fun getById(noteId: Int): GenericNote {
-        while (mutableIterator.hasNext()) {
-             if (noteId == mutableIterator.next().note.noteId){
-                return mutableIterator.next()
+        noteStorage.forEachIndexed { index, note ->
+             if (noteId == noteStorage[index].note.noteId){
+                return noteStorage[index]
             }
         }
         throw NoteNotFoundException("Такой заметки не существует")
@@ -96,20 +99,20 @@ object NoteService {
 
     //Возвращает список комментариев к заметке.
     fun getComments(noteId: Int): MutableList<Comment>{
-        while (mutableIterator.hasNext()) {
-            if (noteId == mutableIterator.next().note.noteId){
-                return mutableIterator.next().comment
+        noteStorage.forEachIndexed { index, note ->
+            if (noteId == noteStorage[index].note.noteId){
+                return noteStorage[index].comment
             }
         }
         throw NoteNotFoundException("Такой заметки не существует")
     }
 
     //Восстанавливает удалённый комментарий.
-    fun restoreComment(gNote: GenericNote, idComment: Int){
-        val mutableIterator = gNote.comment.listIterator()
-        while (mutableIterator.hasNext()) {
-            if (idComment == mutableIterator.next().commentId){
-                mutableIterator.next().deletionId = true
+    fun restoreComment(noteId: Int, idComment: Int){
+        noteStorage[noteId].comment.forEachIndexed { index, note ->
+            if (idComment == noteStorage[noteId].comment[index].commentId){
+                noteStorage[noteId].comment[index].deletionId = true
+                return
             }
         }
         throw NoteNotFoundException("Такого комментария никогда не было")
