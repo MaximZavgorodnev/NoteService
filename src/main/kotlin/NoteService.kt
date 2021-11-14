@@ -1,6 +1,5 @@
-
-
 object NoteService {
+    //Исходные данные
     var noteStorage: MutableList<GenericNote> = mutableListOf()
     var idCom = 0
 
