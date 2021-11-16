@@ -40,7 +40,7 @@ object NoteService {
                 notes.add(noteStorage[index])
             }
         }
-        if (notes==null) {throw NoteNotFoundException("Пользователь не создавал заметок")} else {return notes}
+        if (notes.isEmpty()) {throw NoteNotFoundException("Пользователь не создавал заметок")} else {return notes}
     }
 
     //Удаляет заметку текущего пользователя
@@ -70,7 +70,6 @@ object NoteService {
         notes.forEachIndexed { index, note ->
             notes[index].note.title = "Изменили заголовок"
         }
-
     }
 
     //Редактирует указанный комментарий у заметки.
